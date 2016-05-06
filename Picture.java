@@ -114,6 +114,34 @@ public class Picture extends SimplePicture {
 			}
 		}
 	}
+	
+	public int[] averageColor()
+	{
+		Pixel[][] pixels = getPixels2D();
+		int[] averageColor = {0,0,0};
+		for(int row = 0; row < pixels.length; row++)
+		{
+			
+			for(int col = 0; col < pixels[0].length; col++)
+			{
+				
+				averageColor[0]+=pixels[row][col].getRed();
+				averageColor[1]+=pixels[row][col].getGreen();
+				averageColor[2]+=pixels[row][col].getBlue();
+				
+				
+			}
+			
+			
+		}
+		
+		averageColor[0]/=(pixels.length*pixels[0].length);
+		averageColor[1]/=(pixels.length*pixels[0].length);
+		averageColor[2]/=(pixels.length*pixels[0].length);
+		
+		return averageColor;
+		
+	}
 
 	// __________________________________________________________________
 
