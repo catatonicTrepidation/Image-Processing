@@ -2,7 +2,19 @@ package com.eimacs.lab06;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Random;
+import java.util.Scanner;
+
+import javax.imageio.ImageIO;
 
 
 //import MyPackage.Pixel;
@@ -115,6 +127,88 @@ public class Picture extends SimplePicture {
 		}
 	}
 	
+	
+	
+	public void puzzler(int n)
+	{
+		Random rand = new Random();
+		Pixel[][] pixels = getPixels2D();
+		Color[][] tempColors = new Color[pixels[0].length][pixels.length];//new Pixel[getWidth()/n][getHeight()/n];
+		Pixel leftPixel, rightPixel;
+		double height = pixels.length;
+		double width = pixels[0].length;
+		int fromPiece = 0;
+		int toPiece = 0;
+		double randomRow = 0;
+		double randomCol = 0;
+		int c1, c2, c3;
+		
+		int baseRow = 0;
+		int baseCol = 0;
+		
+		for(int i = 0; i < n; i++)
+		{
+			for(int j = 0; j < n; j++)
+			{
+				randomRow = rand.nextInt(n);
+				randomCol = rand.nextInt(n);
+				//System.out.println("height*(randomRow/n) = " + height*(randomRow/n));
+				//System.out.println("height*(randomRow+1)/n - 1 = " + (height*(randomRow+1)/n - 1));
+				c1 = rand.nextInt(256);
+				c2 = rand.nextInt(256);
+				c3 = rand.nextInt(256);
+				
+				baseRow = 0;
+				baseCol = 0;
+				//System.out.println(height/n);
+				
+				for(int row = (int) (height*(randomRow/n)); row < height*(randomRow+1)/n; row++)
+				{
+					baseCol = 0;
+					for(int col = (int) (width*(randomCol/n)); col < width*(randomCol+1)/n; col++)
+					{
+						//System.out.println("(int) (i*(height/n))+baseRow = " + ((int) (i*(height/n))+baseRow));
+						//System.out.println("(int) ((j*(width/n))+baseCol) = " + ((int) ((j*(width/n))+baseCol)));
+						//System.out.println("baseRow = " + baseRow);
+						tempColors[row][col] = pixels[(int) ((i*(height/n))+baseRow)][(int) ((j*(width/n))+baseCol)].getColor();
+						pixels[(int) ((i*(height/n))+baseRow)][(int) ((j*(width/n))+baseCol)].setColor(pixels[row][col].getColor());
+						pixels[row][col].setColor(tempColors[row][col]);
+						
+						baseCol++;
+						
+						
+					}
+					baseRow++;
+				}	
+			}
+			
+		}
+	}
+
+	public void saveImage(String filePath)
+	{
+		BufferedImage bimg = getBufferedImage();
+		try {
+    		ImageIO.write(bimg,"png", new File(filePath));
+    		
+    	} catch (IOException e) {
+    		// TODO Auto-generated catch block
+    		e.printStackTrace();
+    	}
+	}
+	
+	public void saveImage(String directory, String fileName)
+	{
+		BufferedImage bimg = getBufferedImage();
+		try {
+    		ImageIO.write(bimg,"png", new File(directory + fileName));
+    		
+    	} catch (IOException e) {
+    		// TODO Auto-generated catch block
+    		e.printStackTrace();
+    	}
+	}
+	
 	public int[] averageColor()
 	{
 		Pixel[][] pixels = getPixels2D();
@@ -142,79 +236,297 @@ public class Picture extends SimplePicture {
 		return averageColor;
 		
 	}
+	
+	public Picture makeSquare()
+	{
+		Pixel[][] pixels = getPixels2D();
 
-	// __________________________________________________________________
+		
+		int width = pixels[0].length;
+		int height = pixels.length;
+		Picture p2;
+		
+		
+		if(width>height)
+		{
+			System.out.println("hey?");
+			p2 = new Picture(height,height);
+			Pixel[][] pixels2 = p2.getPixels2D();
+			for(int row = 0; row < height; row++)
+			{
+				for(int col = (width - height)/2; col < (width - ((width - height))/2.0); col++)
+				{
+					
+					pixels2[row][(int) (col-(width - height)/2.0)].setColor(pixels[row][col].getColor());
+				}
+			}
+		}
+		else
+		{
+			//System.out.println("hi");
+			p2 = new Picture(width,width);
+			Pixel[][] pixels2 = p2.getPixels2D();
+			for(int row = (height - width)/2; row < (height - (height - width)/2.0); row++)
+			{
+				for(int col = 0; col < width; col++)
+				{
+					pixels2[(int) (row-(height-width)/2.0)][col].setColor(pixels[row][col].getColor());
+				}
+			}
+		}
+		return p2;
+		
+		//p2.explore();
+	}
+	
+	public Picture makeBlocky(int n)
+	{
+		Pixel[][] pixels = getPixels2D();
+		int height = pixels.length;
+		int width = pixels[0].length;
+		Picture p2;
+		
+		if(height%n != 0)
+		{
+			int newLength = height;
+			while(newLength%n != 0)
+			{
+				
+				newLength--;
+			}
+			p2 = new Picture(newLength,newLength);
+			
+		}
+		else
+		{
+			p2 = new Picture(height,width);
+		}
+		
+		Pixel[][] pixels2 = p2.getPixels2D();
+		
+		for(int row = 0; row < pixels2.length; row++)
+		{
+			for(int col = 0; col < pixels2[0].length; col++)
+			{
+				pixels2[row][col].setColor(pixels[row][col].getColor());
+			}
+		}
+		
+		
+		Color blockColor;
+		int[] colorData = {0,0,0};
+		int blockLength = (int) ((1.0/n)*pixels2.length);
+		//System.out.println(blockLength);
+		for(double i = 0; i < n; i++)
+		{
+			
+			for(double j = 0; j < n; j++)
+			{
+				colorData[0] = 0;
+				colorData[1] = 0;
+				colorData[2] = 0;
+				
+				for(int row = (int) ((i/n)*pixels2.length); row < ((i+1)/n)*pixels2.length; row++)
+				{
+					for(int col = (int) ((j/n)*pixels2[0].length); col < ((j+1)/n)*pixels2[0].length; col++)
+					{
+						colorData[0]+=pixels2[row][col].getRed();
+						colorData[1]+=pixels2[row][col].getGreen();
+						colorData[2]+=pixels2[row][col].getBlue();
+					}
+				}
+				
+				blockColor = new Color(colorData[0]/(blockLength*blockLength),colorData[1]/(blockLength*blockLength),colorData[2]/(blockLength*blockLength));
+				for(int row = (int) ((i/n)*pixels2.length); row < ((i+1)/n)*pixels2.length; row++)
+				{
+					for(int col = (int) ((j/n)*pixels2[0].length); col < ((j+1)/n)*pixels2[0].length; col++)
+					{
+						pixels2[row][col].setColor(blockColor);			
+					}
+				}
+			}
+		}
 
-	// public double[] HeatMap(double[][] values)
-	//
-	// {
-	//
-	// double x = 0;
-	//
-	// double valMin = values[0][0], valMax = values[0][0];
-	// double xMin = values[0][1], xMax = values [0][1];
-	// double yMin = values[0][2], yMax = values [0][2];
-	//
-	// for(int i = 0; i < values.length; i++)
-	//
-	// {
-	//
-	// if(values[i][0] > valMax)
-	//
-	// valMax = values[i][0];
-	//
-	// if(values[i][0] < valMin)
-	//
-	// valMin = values[i][0];
-	//
-	// }
-	// System.out.println(valMin);
-	// System.out.println(valMax);
-	//
-	// //System.out.println(valMin + " | " + valMax);
-	//
-	// double valRange = valMax - valMin;
-	// System.out.println(valRange);
-	//
-	//
-	//
-	// Pixel pixels[][] = getPixels2D();
-	//
-	// for (int row = 0; row < (Math.sqrt(values.length)); row++)
-	//
-	// {
-	// for(int col = 0; col < (Math.sqrt(values.length)); col++)
-	// {
-	// x = (values[row*10 + col][0] - valMin)/valRange;
-	//
-	// if(x > 1)
-	// {
-	// x = 1;
-	// }
-	// if(x < 0)
-	// {
-	// x = 0;
-	// }
-	// //System.out.println(x);
-	// pixels[row*10 + col][0].setColor(new Color((int)(122 + 123*x),(int)(255 -
-	// x*255),(int)(255 - x*255)));
-	// //pixels[i][j].setColor(new
-	// Color((int)(255*x),(int)(255*x),(int)(255*x)));
-	//
-	// }
-	//
-	//
-	//
-	//
-	//
-	// }
-	//
-	// double[] minAndMax = {valMin, valMax};
-	//
-	// return minAndMax;
-	//
-	// }
+		
+		return p2;
+	}
+	
+	//Squares only!!
+	public Picture blockify(Picture p, int length)
+	{
+		Pixel[][] pixels = p.getPixels2D();
+		int height = pixels.length;
+		int width = pixels[0].length;
+		Picture p2;
+		
+		//dimensions of new "pixels" of picture 
+		
+		
+		if(height%length != 0)
+		{
+			int newLength = height;
+			while(newLength%125 != 0)
+			{
+				
+				newLength--;
+			}
+			p2 = new Picture(newLength,newLength);
+			
+		}
+		else
+		{
+			p2 = new Picture(height,width);
+		}
+		
+		Pixel[][] pixels2 = p2.getPixels2D();
+		
+		for(int row = 0; row < pixels2.length; row++)
+		{
+			for(int col = 0; col < pixels2[0].length; col++)
+			{
+				pixels2[row][col].setColor(pixels[row][col].getColor());
+			}
+		}
+		
+		Picture p3 = new Picture(length, length);
+		Pixel[][] pixels3 = p3.getPixels2D();
+		int newBlockLength = pixels2.length/length;
+		Color blockColor;
+		int[] colorData = {0,0,0};
+		
+		for(double i = 0; i < length; i++)
+		{
+			for(double j = 0; j < length; j++)
+			{
+				colorData[0] = 0;
+				colorData[1] = 0;
+				colorData[2] = 0;
+				for(int row = (int) ((i*newBlockLength)); row < (((i+1)*newBlockLength)); row++)
+				{
 
+					for(int col = (int) ((j*newBlockLength)); col < (((j+1)*newBlockLength)); col++)
+					{
+						
+						colorData[0]+=pixels2[row][col].getRed();
+						colorData[1]+=pixels2[row][col].getGreen();
+						colorData[2]+=pixels2[row][col].getBlue();
+
+					}
+				}
+				blockColor = new Color(colorData[0]/(newBlockLength*newBlockLength),colorData[1]/(newBlockLength*newBlockLength),colorData[2]/(newBlockLength*newBlockLength));
+				pixels3[(int) i][(int) j].setColor(blockColor);
+
+				
+			}
+		}
+
+		return p3;
+		//p3.saveImage("/Users/miaow/Desktop/image.png");
+	}
+	
+	
+	
+	public void Mosaic(int n)
+	{
+		Pixel[][] pixels = getPixels2D();
+		int length = pixels.length/n;
+		Color c;
+		
+	  	
+	  	 File file = new File("/Users/miaow/Desktop/PictureData.txt");
+
+	  	
+	  	String bestFit = "";
+	  	int smallestDistance = 1000000;
+	  	Picture p2;
+	  	int counter = 0;
+	  	int totalDistance = 0;
+	  	int[] theColor = {0,0,0};
+		
+		for(double i = 0; i < n; i++)
+		{
+			for(double j = 0; j < n; j++)
+			{
+				counter = 0;
+				totalDistance = 0;
+				smallestDistance = 1000000;
+				bestFit = "";
+				c = pixels[(int) (i*length)][(int) (j*length)].getColor();
+				//System.out.println(c);
+				theColor[0] = c.getRed();
+				theColor[1] = c.getGreen();
+				theColor[2] = c.getBlue();
+				
+				//System.out.println(c.getBlue());
+	
+			  	 try {
+			  		 
+			            Scanner scanner = new Scanner(file);
+			            while (scanner.hasNext()) {
+			                String line = scanner.next();
+			                //System.out.println(line);
+			                //System.out.println(counter%4 + ": " + line);
+			                if((counter%4) < 3)
+			                {
+			                	//System.out.println(line);
+			                	//totalDistance += distanceSquared(Integer.parseInt(line),theColor[counter%4]);
+			                	totalDistance += distanceCubed(Integer.parseInt(line),theColor[counter%4]);
+			                	//System.out.println(distanceSquared(Integer.parseInt(line),theColor[counter%4]));
+			                	
+			                }
+			                else
+			                {
+			                	if(Math.sqrt(totalDistance) < smallestDistance)
+			                	{
+			                		//System.out.println(Math.sqrt(totalDistance));
+			                		smallestDistance = (int) Math.sqrt(totalDistance);
+			                		bestFit = line;
+			                		//System.out.println(smallestDistance);
+			                	}
+			                	totalDistance = 0;
+			                }
+			                //System.out.println(smallestDistance);
+			                counter++;
+			                
+			            }
+			        } catch (FileNotFoundException e) {
+			            e.printStackTrace();
+			        }
+				
+			  	 //System.out.println(bestFit);
+			  	 //p2 = new Picture("/Users/miaow/Documents/workspace/Lab06/src/com/eimacs/lab06/" + length + "x" + length + "Images/" + length + "x" + length + bestFit);
+			  	p2 = new Picture("/Users/miaow/Documents/workspace/Lab06/src/com/eimacs/lab06/63x63Images/125x125" +  bestFit);
+			  	 Pixel[][] pixels2 = p2.getPixels2D();
+			  	 int p2Row = 0;
+			  	 int p2Col = 0;
+				for(int row = (int) (i*length); row < (i+1)*length; row++)
+				{
+					p2Col=0;
+					for(int col = (int) (j*length); col < (j+1)*length; col++)
+					{
+						
+						pixels[row][col].setColor(pixels2[p2Row][p2Col].getColor());
+						
+						p2Col++;
+					}
+					p2Row++;
+				}
+			}
+		}
+	}
+	
+	private int distanceSquared(int first, int second) {
+		// TODO Auto-generated method stub
+		return (int) Math.pow(first-second, 2);
+	}
+	
+	private int distanceCubed(int first, int second) {
+		// TODO Auto-generated method stub
+		return (int) Math.pow(first-second, 2);
+	}
+
+
+	
 	public void circleThing(int r1, int r2, int rot) {
 
 		Pixel[][] pixels = getPixels2D();
@@ -282,10 +594,279 @@ public class Picture extends SimplePicture {
 		}
 		
 		
+	}
+	
+	public void appendToFile(int[] data, Picture p)
+	{
+    	try {
+
+			//String content = "This is the content to write into file";
+
+			File file = new File("/Users/miaow/Desktop/PictureData.txt");
+
+			// if file doesnt exists, then create it
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+
+			FileWriter fw = new FileWriter(file.getAbsoluteFile(),true);
+			BufferedWriter bw = new BufferedWriter(fw);
+			bw.append(data[0] + " " + data[1] + " " + data[2] + " " + p.getFileName() + "\n");
+			//bw.write(thisColor[0] + " " + thisColor[1] + " " + thisColor[2] + " " + p.getFileName() + "\n");
+			bw.close();
+
+			System.out.println("Done");
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void appendToFile(int[] data, String s)
+	{
+    	try {
+
+			//String content = "This is the content to write into file";
+
+			File file = new File("/Users/miaow/Desktop/PictureData.txt");
+
+			// if file doesnt exists, then create it
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+
+			FileWriter fw = new FileWriter(file.getAbsoluteFile(),true);
+			BufferedWriter bw = new BufferedWriter(fw);
+			bw.append(data[0] + " " + data[1] + " " + data[2] + " " + s + "\n");
+			//bw.write(thisColor[0] + " " + thisColor[1] + " " + thisColor[2] + " " + p.getFileName() + "\n");
+			bw.close();
+
+			System.out.println("Done");
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void SierpinskiThirds()
+	{
+		Random rand = new Random();
+
+		
+		Pixel[][] pixels = getPixels2D();
+		
+		int randomCol = rand.nextInt((pixels[0].length) );
+		int randomRow = rand.nextInt((pixels.length) );
+		
+		int cent_x = pixels[0].length / 2;
+		int cent_y = pixels.length / 2;
+		
+		int[][] originalPixels = {{0,cent_x},{pixels[0].length-1,0},{pixels[0].length-1,2*cent_x-1}};
 		
 		
+		pixels[0][cent_x].setColor(Color.BLUE);
+		pixels[pixels[0].length-1][0].setColor(Color.BLUE);
+		pixels[pixels[0].length-1][2*cent_x-1].setColor(Color.BLUE);
+		
+		pixels[randomRow][randomCol].setColor(Color.RED);
+		
+		int nextPoint;
+		
+		int newCol = randomCol;
+		int newRow = randomRow;
+		
+		int divisor = 1; 
+		
+		for(int i = 0; i < 1000000; i++)
+		{
+			divisor = rand.nextInt(3)+1;
+			nextPoint = rand.nextInt(3);
+			newRow = (originalPixels[nextPoint][0]-newRow)/divisor + newRow;
+			newCol = (originalPixels[nextPoint][1]-newCol)/divisor + newCol;
+			//pixels[newRow][newCol].setColor(Color.RED);
+			pixels[newRow][newCol].setColor(new Color((int) (100+100*Math.sin((newRow/(50.0)))),(int) (50+25*Math.sin((newRow/(25.0)))),(int) (150+100*Math.sin((newRow/(50.0))))));
+			//sleep(1);
+			//repaint();
+			
+		}
 		
 		
+	}
+	
+	public void SierpinskiAlternating()
+	{
+		Random rand = new Random();
+
+		
+		Pixel[][] pixels = getPixels2D();
+		
+		int randomCol = rand.nextInt((pixels[0].length) );
+		int randomRow = rand.nextInt((pixels.length) );
+		
+		int cent_x = pixels[0].length / 2;
+		int cent_y = pixels.length / 2;
+		
+		int[][] originalPixels = {{0,cent_x},{pixels[0].length-1,0},{pixels[0].length-1,2*cent_x-1},{0,0},{cent_y*2-1,0},{cent_y,cent_x*2-1}};
+		
+		
+		pixels[0][cent_x].setColor(Color.BLUE);
+		pixels[pixels[0].length-1][0].setColor(Color.BLUE);
+		pixels[pixels[0].length-1][2*cent_x-1].setColor(Color.BLUE);
+		
+		pixels[randomRow][randomCol].setColor(Color.RED);
+		
+		int nextPoint;
+		
+		int newCol = randomCol;
+		int newRow = randomRow;
+		double colorRatio = 1/256;
+		
+		for(int i = 0; i < 100000; i++)
+		{
+			nextPoint = rand.nextInt(3);
+			newRow = (originalPixels[nextPoint+3*(i%2)][0]+newRow)/2;
+			newCol = (originalPixels[nextPoint+3*(i%2)][1]+newCol)/2;
+			
+			pixels[newRow][newCol].setColor(new Color((int) (100+100*Math.sin((newRow/(50.0)))),0,0));
+			
+			//pixels[newRow][newCol].setColor(Color.BLUE);
+			//sleep(1);
+			//repaint();
+			
+		}
+	}
+	
+	public void SierpinskiAlternatingCycle()
+	{
+		Random rand = new Random();
+
+		
+		Pixel[][] pixels = getPixels2D();
+		
+		int randomCol = rand.nextInt((pixels[0].length) );
+		int randomRow = rand.nextInt((pixels.length) );
+		
+		int cent_x = pixels[0].length / 2;
+		int cent_y = pixels.length / 2;
+		
+		int[][] originalPixels = {{0,cent_x},{pixels[0].length-1,0},{pixels[0].length-1,2*cent_x-1},{0,0},{cent_y*2-1,0},{cent_y,cent_x*2-1}};
+		
+		
+		pixels[0][cent_x].setColor(Color.BLUE);
+		pixels[pixels[0].length-1][0].setColor(Color.BLUE);
+		pixels[pixels[0].length-1][2*cent_x-1].setColor(Color.BLUE);
+		
+		pixels[randomRow][randomCol].setColor(Color.RED);
+		
+		int nextPoint;
+		int cyclePoint = 0;
+		
+		int newCol = randomCol;
+		int newRow = randomRow;
+		double colorRatio = 1/256;
+		
+		for(int i = 0; i < 1000000; i++)
+		{
+			nextPoint = rand.nextInt(3);
+			cyclePoint = (cyclePoint+1)%3;
+			newRow = (originalPixels[nextPoint*(i%2) + cyclePoint*((i+1)%2)][0]+newRow)/2;
+			newCol = (originalPixels[nextPoint*(i%2) + cyclePoint*((i+1)%2)][1]+newCol)/2;
+			
+			//pixels[newRow][newCol].setColor(new Color((int) (100+100*Math.sin((newRow/(50.0)))),0,0));
+			
+			pixels[newRow][newCol].setColor(Color.BLUE);
+			//sleep(1);
+			//repaint();
+			
+		}
+	}
+	
+	public void SierpinskiCycle()
+	{
+		Random rand = new Random();
+
+		
+		Pixel[][] pixels = getPixels2D();
+		
+		int randomCol = rand.nextInt((pixels[0].length) );
+		int randomRow = rand.nextInt((pixels.length) );
+		
+		int cent_x = pixels[0].length / 2;
+		int cent_y = pixels.length / 2;
+		
+		int[][] originalPixels = {{0,0},{pixels[0].length-1,pixels.length-1},{pixels[0].length-1,0},{0,pixels.length-1}};
+		
+		
+		pixels[0][0].setColor(Color.BLUE);
+		pixels[pixels[0].length-1][0].setColor(Color.BLUE);
+		pixels[0][pixels.length-1].setColor(Color.BLUE);
+		pixels[pixels[0].length-1][pixels.length-1].setColor(Color.BLUE);
+		
+		pixels[randomRow][randomCol].setColor(Color.RED);
+		
+		int nextPoint = 0;
+		
+		int newCol = randomCol;
+		int newRow = randomRow;
+		
+		int cycleCount = 0;
+		
+		for(int i = 0; i < 10000; i++)
+		{
+			//System.out.println(nextPoint);
+			nextPoint = (nextPoint+1)%4;
+			
+			newRow = (originalPixels[nextPoint][0]+newRow)/2;
+			newCol = (originalPixels[nextPoint][1]+newCol)/2;
+			pixels[newRow][newCol].setColor(Color.RED);
+			//sleep(1);
+			//repaint();
+			
+		}
+		
+	}
+	
+	public void SierpinskiAlternating2()
+	{
+		Random rand = new Random();
+
+		
+		Pixel[][] pixels = getPixels2D();
+		
+		int randomCol = rand.nextInt((pixels[0].length) );
+		int randomRow = rand.nextInt((pixels.length) );
+		
+		int cent_x = pixels[0].length / 2;
+		int cent_y = pixels.length / 2;
+		
+		int[][] originalPixels = {{0,cent_x},{pixels[0].length-1,0},{pixels[0].length-1,2*cent_x-1},{0,0},{cent_y*2-1,0},{cent_y,cent_x*2-1}, {0,0}, {cent_y*2-1,0},{cent_y,cent_x*2-1},{0,cent_x*2-1},{cent_y*2-1,cent_x*2-1},{cent_y,0}};
+		
+		
+		pixels[0][cent_x].setColor(Color.BLUE);
+		pixels[pixels[0].length-1][0].setColor(Color.BLUE);
+		pixels[pixels[0].length-1][2*cent_x-1].setColor(Color.BLUE);
+		
+		pixels[randomRow][randomCol].setColor(Color.RED);
+		
+		int nextPoint;
+		
+		int newCol = randomCol;
+		int newRow = randomRow;
+		double colorRatio = 1/256;
+		
+		for(int i = 0; i < 100000; i++)
+		{
+			nextPoint = rand.nextInt(3);
+			newRow = (originalPixels[nextPoint+3*(i%4)][0]+newRow)/2;
+			newCol = (originalPixels[nextPoint+3*(i%4)][1]+newCol)/2;
+			
+			pixels[newRow][newCol].setColor(new Color((int) (100+100*Math.sin((newRow/(50.0)))),0,0));
+			
+			//pixels[newRow][newCol].setColor(Color.BLUE);
+			//sleep(1);
+			//repaint();
+			
+		}
 	}
 	
 	public void SierpinskiPentagon()
@@ -301,14 +882,17 @@ public class Picture extends SimplePicture {
 		int cent_x = pixels[0].length / 2;
 		int cent_y = pixels.length / 2;
 		
-		int[][] originalPixels = {{0,0},{0,2*cent_x-1},{2*cent_y-1,0},{2*cent_y-1,2*cent_x-1}};
+		int[][] originalPixels = {{0,cent_x+(int) (cent_y*Math.tan(Math.toRadians(36)))},{0,cent_x-(int) (cent_y*Math.tan(Math.toRadians(36)))},{(int) (cent_y+cent_y*Math.sin(Math.toRadians(72))),(int) (cent_x+cent_y*Math.cos(Math.toRadians(72)))},{(int) (cent_y+cent_y*Math.sin(Math.toRadians(72))),(int) (cent_x+cent_y*Math.cos(Math.toRadians(72)))},{2*cent_y-1,cent_x}};
 		
-		
-		pixels[0][cent_x+(int) (cent_y*Math.tan(36))].setColor(Color.BLUE);
-		pixels[0][cent_x-(int) (cent_y*Math.tan(36))].setColor(Color.BLUE);
-		pixels[cent_y+][].setColor(Color.BLUE);
-		pixels[2*cent_y-1][0].setColor(Color.BLUE);
-		pixels[2*cent_y-1][2*cent_x-1].setColor(Color.BLUE);
+		//System.out.println((int) (cent_y+cent_y*Math.tan(Math.toRadians(36))*Math.sin(Math.toRadians(72))));
+		//System.out.println(cent_x-(int) (cent_y*Math.tan(Math.toRadians(36))));
+		pixels[0][cent_x+(int) (cent_y*Math.tan(Math.toRadians(36)))].setColor(Color.BLUE);
+		pixels[0][cent_x-(int) (cent_y*Math.tan(Math.toRadians(36)))].setColor(Color.BLUE);
+		pixels[(int) (cent_y+cent_y*Math.sin(Math.toRadians(72)))][(int) (cent_x+cent_y*Math.cos(Math.toRadians(72)))].setColor(Color.BLUE);
+		pixels[(int) (cent_y+cent_y*Math.sin(Math.toRadians(72)))][(int) (cent_x-cent_y*Math.cos(Math.toRadians(72)))].setColor(Color.BLUE);
+		//pixels[(int) (cent_y+cent_y*Math.tan(Math.toRadians(36))*Math.sin(Math.toRadians(72)))][(int) (cent_x-cent_y*Math.tan(Math.toRadians(36))*Math.sin(Math.toRadians(72)))].setColor(Color.BLUE);
+		//pixels[(int) (cent_y+cent_y*Math.tan(Math.toRadians(36))*Math.sin(Math.toRadians(72)))][(int) (cent_x+cent_y*Math.tan(Math.toRadians(36))*Math.sin(Math.toRadians(72)))].setColor(Color.BLUE);
+		pixels[2*cent_y-1][cent_x].setColor(Color.BLUE);
 		
 		
 		pixels[randomRow][randomCol].setColor(Color.RED);
@@ -317,16 +901,92 @@ public class Picture extends SimplePicture {
 		
 		int newCol = randomCol;
 		int newRow = randomRow;
-		
+		Color c = new Color(0,0,0);
+		double ratio = 256/10000;
 		for(int i = 0; i < 10000; i++)
 		{
-			nextPoint = rand.nextInt(4);
+			nextPoint = rand.nextInt(5);
+			
 			newRow = (originalPixels[nextPoint][0]+newRow)/2;
 			newCol = (originalPixels[nextPoint][1]+newCol)/2;
-			pixels[newRow][newCol].setColor(Color.RED);
+			pixels[newRow][newCol].setColor(new Color((int) (100*Math.sin(i/Math.PI)+100),(int) (100*Math.sin(2*i/Math.PI)+150),(int) (120*Math.sin(3*i/Math.PI)+120)));
 			
 			
 		}
+		
+		
+	}
+	
+	public void SierpinskiPentagon2()
+	{
+		Random rand = new Random();
+
+		
+		Pixel[][] pixels = getPixels2D();
+		
+		int randomCol = rand.nextInt((pixels[0].length) );
+		int randomRow = rand.nextInt((pixels.length) );
+		
+		int cent_x = pixels[0].length / 2;
+		int cent_y = pixels.length / 2;
+		
+		int[][] originalPixels = {{0,cent_x+(int) (cent_y*Math.tan(Math.toRadians(36)))},{0,cent_x-(int) (cent_y*Math.tan(Math.toRadians(36)))},{(int) (cent_y+cent_y*Math.cos(Math.toRadians(108))),(int) (cent_x+cent_y*Math.sin(Math.toRadians(108)))},{(int) (cent_y+cent_y*Math.cos(Math.toRadians(108))),(int) (cent_x+cent_y*Math.sin(Math.toRadians(108)))},{2*cent_y-1,cent_x}};
+		
+		pixels[0][cent_x+(int) (cent_y*Math.tan(Math.toRadians(36)))].setColor(Color.BLUE);
+		pixels[0][cent_x-(int) (cent_y*Math.tan(Math.toRadians(36)))].setColor(Color.BLUE);
+		pixels[(int) (cent_y+cent_y*Math.cos(Math.toRadians(108)))][(int) (cent_x+cent_y*Math.sin(Math.toRadians(108)))].setColor(Color.BLUE);
+		pixels[(int) (cent_y+cent_y*Math.cos(Math.toRadians(108)))][(int) (cent_x-cent_y*Math.sin(Math.toRadians(108)))].setColor(Color.BLUE);
+		pixels[2*cent_y-1][cent_x].setColor(Color.BLUE);
+		
+		
+		pixels[randomRow][randomCol].setColor(Color.RED);
+		
+		int nextPoint;
+		
+		int newCol = randomCol;
+		int newRow = randomRow;
+		Color c = new Color(0,0,0);
+		double ratio = 256/10000;
+		for(int i = 0; i < 10000; i++)
+		{
+			nextPoint = rand.nextInt(5);
+			
+			newRow = (originalPixels[nextPoint][0]+newRow)/2;
+			newCol = (originalPixels[nextPoint][1]+newCol)/2;
+			pixels[newRow][newCol].setColor(new Color((int) (100*Math.sin(i/Math.PI)+100),(int) (100*Math.sin(2*i/Math.PI)+150),(int) (120*Math.sin(3*i/Math.PI)+120)));
+			
+			
+		}
+		
+		
+	}
+	
+	public void RegularPentagon()
+	{
+		Random rand = new Random();
+
+		
+		Pixel[][] pixels = getPixels2D();
+		
+		int randomCol = rand.nextInt((pixels[0].length) );
+		int randomRow = rand.nextInt((pixels.length) );
+		
+		int cent_x = pixels[0].length / 2;
+		int cent_y = pixels.length / 2;
+		
+		int[][] originalPixels = {{0,cent_x+(int) (cent_y*Math.tan(Math.toRadians(36)))},{0,cent_x-(int) (cent_y*Math.tan(Math.toRadians(36)))},{(int) (cent_y+cent_y*Math.sin(Math.toRadians(72))),(int) (cent_x+cent_y*Math.cos(Math.toRadians(72)))},{(int) (cent_y+cent_y*Math.sin(Math.toRadians(72))),(int) (cent_x+cent_y*Math.cos(Math.toRadians(72)))},{2*cent_y-1,cent_x}};
+		
+		//System.out.println((int) (cent_y+cent_y*Math.tan(Math.toRadians(36))*Math.sin(Math.toRadians(72))));
+		//System.out.println(cent_x-(int) (cent_y*Math.tan(Math.toRadians(36))));
+		pixels[0][cent_x+(int) (cent_y*Math.tan(Math.toRadians(36)))].setColor(Color.BLUE);
+		pixels[0][cent_x-(int) (cent_y*Math.tan(Math.toRadians(36)))].setColor(Color.BLUE);
+		pixels[(int) (cent_y+cent_y*Math.cos(Math.toRadians(108)))][(int) (cent_x+cent_y*Math.sin(Math.toRadians(108)))].setColor(Color.BLUE);
+		pixels[(int) (cent_y+cent_y*Math.cos(Math.toRadians(108)))][(int) (cent_x-cent_y*Math.sin(Math.toRadians(108)))].setColor(Color.BLUE);
+		pixels[2*cent_y-1][cent_x].setColor(Color.BLUE);
+		
+		
+		pixels[randomRow][randomCol].setColor(Color.RED);
+
 		
 		
 		
@@ -954,123 +1614,7 @@ public class Picture extends SimplePicture {
 
 		int[] mods = { 1, 2, 3 };
 
-		System.out.println("HI");
-		// for(double i = 0; i < partitions; i++)
-		// {
-		//
-		//
-		// if(i%3==0)
-		// {
-		// System.out.println("i%3==0 == " + (i%3==0));
-		// for(int row = (int)(i/partitions)*pixels.length; row <
-		// (int)((i+1)/partitions)*pixels.length; row++)
-		// {
-		// for(int col = (int)(i/partitions)*pixels[0].length; col <
-		// (int)((i+1)/partitions)*pixels[0].length; col++)
-		// {
-		// //pixels[row][col].setColor(fourColors[(int)((col/wScale)%3)]);
-		// pixels[row][col].setColor(Color.BLUE);
-		// }
-		// }
-		// }
-		// else if(i%3==1)
-		// {
-		// System.out.println("i%3==1 == " + (i%3==1));
-		// for(int row = (int)(i/partitions)*pixels.length; row <
-		// (int)((i+1)/partitions)*pixels.length; row++)
-		// {
-		// for(int col = (int)(i/partitions)*pixels[0].length; col <
-		// (int)((i+1)/partitions)*pixels[0].length; col++)
-		// {
-		// //pixels[row][col].setColor(fourColors[(int)((col/wScale)%4)]);
-		// pixels[row][col].setColor(Color.BLACK);
-		// }
-		// }
-		// }
-		// }
-		int i = 0;
-		int j = 0;
-		/// THIS IS REALLY COOL
-		// for(int row = 0; row < pixels.length; row++)
-		// {
-		// for(int col = 0; col < pixels[0].length; col++)
-		// {
-		// pixels[row][col].setColor(fourColors[i%(mods[(int)
-		// (((col/wScale))%2)])]);
-		// i++;
-		// }
-		// }
-		// for(int row = 0; row < pixels.length; row++)
-		// {
-		// for(int col = 0; col < pixels[0].length; col++)
-		// {
-		// pixels[row][col].setColor((colorSets[(int)
-		// (((row/hScale))%3)])[i%(mods[(int) (((col/wScale))%2)])]);
-		// i+=(row%2+col%2);
-		// }
-		// }
-		int size = 150;
-		for (int row = 0; row < pixels.length; row++) {
-			for (int col = 0; col < pixels[0].length; col++) {
-				pixels[row][col].setColor((colorSets[(i % (1 + (int) (((col / hScale) % size)))) % 2])[(1
-						* (i % (1 + (int) (((col / wScale) % size))))) % 3]);
-				i++;
-				// System.out.println(i);
-				// System.out.println((1+(int) (((col/wScale))%2)));
-			}
-		}
-
-		// for(int row = 0; row < pixels.length; row++)
-		// {
-		// for(int col = 0; col < pixels[0].length; col++)
-		// {
-		// pixels[row][col].setColor(colors3[i%(mods[(int)
-		// (((col/wScale))%2)])]);
-		//
-		// }
-		// i++;
-		// }
-
-		// for(int row = 0; row <pixels.length/2; row++)
-		// {
-		// for(int col = 0; col < pixels[0].length/2; col++)
-		// {
-		// pixels[row][col].setColor((colorSets[(int) (
-		// (col/(getWidth()/20))%3)])[(int)
-		// ((row/(getHeight()/(20*(0.5+(row/(double)getHeight())))))%3 +
-		// (col/(getWidth()/(20*(0.5+(col/(double)getWidth())))))%3)%3]);
-		// }
-		// }
-		// for(int row = pixels.length/2; row <pixels.length; row++)
-		// {
-		// for(int col = 0; col < pixels[0].length/2; col++)
-		// {
-		// pixels[row][col].setColor((colorSets[(int) (
-		// (col/(getWidth()/20))%3)])[(int)
-		// ((row/(getHeight()/(20*(0.5+(row/(double)getHeight())))))%3 +
-		// (col/(getWidth()/(20*(0.5+(col/(double)getWidth())))))%3)%3]);
-		// }
-		// }
-		// for(int row = 0; row < pixels.length/2; row++)
-		// {
-		// for(int col = pixels[0].length/2; col < pixels[0].length; col++)
-		// {
-		// pixels[row][col].setColor((colorSets[(int) (
-		// (col/(getWidth()/20))%3)])[(int)
-		// ((row/(getHeight()/(20*(0.5+(row/(double)getHeight())))))%3 +
-		// (col/(getWidth()/(20*(0.5+(col/(double)getWidth())))))%3)%3]);
-		// }
-		// }
-		// for(int row = pixels.length/2; row < pixels.length; row++)
-		// {
-		// for(int col = pixels[0].length/2; col < pixels[0].length; col++)
-		// {
-		// pixels[row][col].setColor((colorSets[(int) (
-		// (col/(getWidth()/20))%3)])[(int)
-		// ((row/(getHeight()/(20*(0.5+(row/(double)getHeight())))))%3 +
-		// (col/(getWidth()/(20*(0.5+(col/(double)getWidth())))))%3)%3]);
-		// }
-		// }
+		
 	}
 
 	public void polka(double e, double f, int xPeriod, int yPeriod, int[] color) {
